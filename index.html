@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Em Hiểu Anh Đến Mức Nào? 💖</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sweetpink: {
+              50: '#fff0f5',
+              100: '#ffe4ee',
+              200: '#fecddf',
+              300: '#fea3c5',
+              400: '#fb6f9f',
+              500: '#f43f7f',
+              600: '#e11d67',
+              700: '#be1254',
+              800: '#9e1247',
+            }
+          },
+          animation: {
+            'bounce-slow': 'bounce 2.5s infinite',
+            'float': 'float 3s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18, ReactDOM & Babel for in-browser JSX parsing -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Canvas Confetti for winning celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts: Be Vietnam Pro & Dancing Script -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-cute {
+      font-family: 'Dancing Script', cursive;
+    }
+    
+    /* Background Canvas for smooth 60fps floating hearts */
+    #hearts-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Custom Glassmorphism */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 20px 40px -15px rgba(244, 63, 127, 0.25);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #ffe4ee;
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #fb6f9f;
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f43f7f;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-pink-200 text-gray-800 antialiased selection:bg-pink-300 selection:text-pink-900 relative overflow-x-hidden">
+
+  <!-- Background Hearts Canvas -->
+  <canvas id="hearts-canvas"></canvas>
+
+  <!-- React Root Container -->
+  <div id="root" class="relative z-10"></div>
+
+  <!-- Background Heart Animation Logic -->
+  <script>
+    (function initFloatingHearts() {
+      const canvas = document.getElementById('hearts-canvas');
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      // Heart particle class
+      class Heart {
+        constructor() {
+          this.reset(true);
+        }
+
+        reset(initial = false) {
+          this.x = Math.random() * width;
+          this.y = initial ? Math.random() * height : height + 30;
+          this.size = Math.random() * 18 + 10;
+          this.speedY = Math.random() * 1.2 + 0.6;
+          this.speedX = (Math.random() - 0.5) * 0.7;
+          this.opacity = Math.random() * 0.55 + 0.25;
+          this.oscillationSpeed = Math.random() * 0.03 + 0.01;
+          this.oscillationDistance = Math.random() * 25 + 10;
+          this.angle = Math.random() * Math.PI * 2;
+          this.rotation = (Math.random() - 0.5) * 0.4;
+
+          const colors = [
+            '255, 105, 180', // HotPink
+            '255, 182, 193', // LightPink
+            '254, 163, 197', // Sweet Pink
+            '244, 63, 127',  // Deep Rose
+            '251, 111, 159', // Pastel Magenta
+            '238, 130, 238', // Violet Pink
+          ];
+          this.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        update() {
+          this.y -= this.speedY;
+          this.angle += this.oscillationSpeed;
+          this.currentX = this.x + Math.sin(this.angle) * this.oscillationDistance;
+
+          if (this.y < -40) {
+            this.reset(false);
+          }
+        }
+
+        draw() {
+          ctx.save();
+          ctx.translate(this.currentX, this.y);
+          ctx.rotate(this.rotation);
+          ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
+
+          ctx.beginPath();
+          const d = this.size;
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(-d / 2, -d / 2, -d, d / 3, 0, d);
+          ctx.bezierCurveTo(d, d / 3, d / 2, -d / 2, 0, 0);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      const count = Math.min(Math.floor((width * height) / 18000), 45);
+      const hearts = Array.from({ length: count }, () => new Heart());
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < hearts.length; i++) {
+          hearts[i].update();
+          hearts[i].draw();
+        }
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+
+      // Click / Tap effect: spawn miniature hearts
+      window.addEventListener('click', (e) => {
+        for (let i = 0; i < 4; i++) {
+          const h = new Heart();
+          h.x = e.clientX;
+          h.y = e.clientY;
+          h.speedY = Math.random() * 2 + 1;
+          h.size = Math.random() * 14 + 8;
+          hearts.push(h);
+          if (hearts.length > count + 15) hearts.shift();
+        }
+      });
+    })();
+  </script>
+
+  <!-- React Main App Script -->
+  <script type="text/babel">
+    const { useState } = React;
+
+    // 15 Câu hỏi trắc nghiệm đúng chuẩn theo yêu cầu
+    const QUIZ_DATA = [
+      {
+        id: 1,
+        question: "Món ăn yêu thích của anh?",
+        options: [
+          { key: "A", text: "Gà rán" },
+          { key: "B", text: "Sườn xào chua ngọt" },
+          { key: "C", text: "Thịt kho" },
+          { key: "D", text: "Cá sốt cà" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: 2,
+        question: "Màu sắc yêu thích của anh?",
+        options: [
+          { key: "A", text: "Màu xanh nước" },
+          { key: "B", text: "Màu đỏ" },
+          { key: "C", text: "Màu đen" },
+          { key: "D", text: "Màu vàng" },
+        ],
+        correctAnswer: "A",
+      },
+      {
+        id: 3,
+        question: "Anh thích ăn món đồ ăn nhanh nào?",
+        options: [
+          { key: "A", text: "Khoai tây chiên" },
+          { key: "B", text: "Hamburger" },
+          { key: "C", text: "Gà rán" },
+          { key: "D", text: "Bánh chuối" },
+        ],
+        correctAnswer: "D",
+      },
+      {
+        id: 4,
+        question: "Loại rau anh ko thik?",
+        options: [
+          { key: "A", text: "Rau muống" },
+          { key: "B", text: "Mướp" },
+          { key: "C", text: "Súp lơ" },
+          { key: "D", text: "Cải ngọt" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: 5,
+        question: "Sau này anh tính làm nghề gì?",
+        options: [
+          { key: "A", text: "Lập trình viên" },
+          { key: "B", text: "Giảng viên" },
+          { key: "C", text: "Youtuber" },
+          { key: "D", text: "Giáo viên" },
+        ],
+        correctAnswer: "A",
+      },
+      {
+        id: 6,
+        question: "Bài nhạc anh ko thích?",
+        options: [
+          { key: "A", text: "Wrong Times" },
+          { key: "B", text: "Cold Don't" },
+          { key: "C", text: "Gội đầu" },
+          { key: "D", text: "Xương rồng" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: 7,
+        question: "Thể loại nhạc anh thích?",
+        options: [
+          { key: "A", text: "Rock" },
+          { key: "B", text: "Rap" },
+          { key: "C", text: "Tình yêu" },
+          { key: "D", text: "EDM" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: 8,
+        question: "Sở thích của anh?",
+        options: [
+          { key: "A", text: "Đi chơi" },
+          { key: "B", text: "Chơi game" },
+          { key: "C", text: "Đọc sách" },
+          { key: "D", text: "Du lịch" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: 9,
+        question: "Loại nước anh thik?",
+        options: [
+          { key: "A", text: "Nước khoáng" },
+          { key: "B", text: "Nước đường" },
+          { key: "C", text: "Nước tăng lực" },
+          { key: "D", text: "Nước ngọt có gas" },
+        ],
+        correctAnswer: "D",
+      },
+      {
+        id: 10,
+        question: "Đồ uống anh thik?",
+        options: [
+          { key: "A", text: "Trà chanh" },
+          { key: "B", text: "Cà phê" },
+          { key: "C", text: "Trà sữa" },
+          { key: "D", text: "Sinh tố" },
+        ],
+        correctAnswer: "A",
+      },
+      {
+        id: 11,
+        question: "Thể loại hoạt hình anh thik?",
+        options: [
+          { key: "A", text: "Anime hành động" },
+          { key: "B", text: "Hoạt hình trinh thám" },
+          { key: "C", text: "Hoạt hình sa điêu" },
+          { key: "D", text: "Hoạt hình lãng mạn" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: 12,
+        question: "Bình thường anh có thích xem phim không?",
+        options: [
+          { key: "A", text: "Có" },
+          { key: "B", text: "Ko" },
+          { key: "C", text: "Thỉnh thoảng" },
+          { key: "D", text: "Chỉ xem phim chiếu rạp" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: 13,
+        question: "Anh thik mùa nào trong năm nhất?",
+        options: [
+          { key: "A", text: "Mùa xuân" },
+          { key: "B", text: "Mùa hạ" },
+          { key: "C", text: "Mùa thu" },
+          { key: "D", text: "Mùa đông" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: 14,
+        question: "Anh có thik chs thể thao ko?",
+        options: [
+          { key: "A", text: "Có" },
+          { key: "B", text: "Không" },
+          { key: "C", text: "Rất đam mê" },
+          { key: "D", text: "Tùy vào bộ môn" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: 15,
+        question: "Anh ưu tiên giải quyết vấn đề theo hướng nào?",
+        options: [
+          { key: "A", text: "Nhờ người khác giúp đỡ" },
+          { key: "B", text: "Trốn tránh vấn đề" },
+          { key: "C", text: "Để cxuc lấn áp" },
+          { key: "D", text: "Bình tĩnh giải quyết" },
+        ],
+        correctAnswer: "D",
+      },
+    ];
+
+    function App() {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [userAnswers, setUserAnswers] = useState({});
+      const [isSubmitted, setIsSubmitted] = useState(false);
+      const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+      const totalQuestions = QUIZ_DATA.length;
+      const answeredCount = Object.keys(userAnswers).length;
+      const currentQ = QUIZ_DATA[currentIndex];
+
+      const handleSelectOption = (optionKey) => {
+        setUserAnswers((prev) => ({
+          ...prev,
+          [currentQ.id]: optionKey,
+        }));
+      };
+
+      const handleNext = () => {
+        if (currentIndex < totalQuestions - 1) {
+          setCurrentIndex(currentIndex + 1);
+        }
+      };
+
+      const handlePrev = () => {
+        if (currentIndex > 0) {
+          setCurrentIndex(currentIndex - 1);
+        }
+      };
+
+      const handleJumpToQuestion = (index) => {
+        setCurrentIndex(index);
+      };
+
+      const handleSubmit = () => {
+        if (answeredCount < totalQuestions) {
+          setShowConfirmModal(true);
+        } else {
+          executeSubmit();
+        }
+      };
+
+      const executeSubmit = () => {
+        setShowConfirmModal(false);
+        setIsSubmitted(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        setTimeout(() => {
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 120,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#f43f7f', '#fb6f9f', '#fecddf', '#ffd166', '#06d6a0'],
+            });
+          }
+        }, 300);
+      };
+
+      const calculateScore = () => {
+        let score = 0;
+        QUIZ_DATA.forEach((q) => {
+          if (userAnswers[q.id] === q.correctAnswer) {
+            score += 1;
+          }
+        });
+        return score;
+      };
+
+      const handleRestart = () => {
+        setUserAnswers({});
+        setCurrentIndex(0);
+        setIsSubmitted(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      const getFeedback = (score) => {
+        if (score === 15) {
+          return {
+            title: "Tâm Đầu Ý Hợp 100%! 👩‍❤️‍👨",
+            message: "God damn! Trl đúng hết như này xứng đáng đc nhận 1 nụ hôn lốc xoáy kiểu Pháp 😇",
+            badgeBg: "bg-emerald-100 text-emerald-800 border-emerald-300",
+            icon: "🏆💖✨",
+          };
+        } else if (score >= 12) {
+          return {
+            title: "Siêu Thấu Hiểu! 🥰",
+            message: "Cũng rất tuyệt vời r đấy! Chỉ thiếu 1 chút nx hoii 🥰",
+            badgeBg: "bg-pink-100 text-pink-800 border-pink-300",
+            icon: "🌸💕⭐",
+          };
+        } else if (score >= 8) {
+          return {
+            title: "Khá Hiểu Nhau Đấy! 🌟",
+            message: "Cũng rất tốt rồi nma yêu anh mà đúng có bằng này là hơi đáng lo đấy",
+            badgeBg: "bg-amber-100 text-amber-800 border-amber-300",
+            icon: "☕🍰🌷",
+          };
+        } else {
+          return {
+            title: "Cần Bồi Dưỡng Tình Cảm Thêm Nè! 🥺",
+            message: "Haizzzz. Chán chả buồn nói 😒",
+            badgeBg: "bg-rose-100 text-rose-800 border-rose-300",
+            icon: "🥺💌🥤",
+          };
+        }
+      };
+
+      return (
+        <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-3xl mx-auto">
+          {/* Header Trang Web */}
+          <header className="text-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 backdrop-blur-md shadow-sm border border-pink-200 text-sweetpink-600 text-sm font-semibold tracking-wide uppercase mb-2">
+              <span className="animate-pulse">💖</span> Quiz Thử Thách Tình Yêu <span className="animate-pulse">💖</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-sweetpink-600 font-cute tracking-wide drop-shadow-sm">
+              Em Hiểu Anh Đến Đâu?
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1 max-w-md mx-auto">
+              Hãy trả lời 15 câu hỏi về anh để xem em hiểu anh đến đâu
+            </p>
+          </header>
+
+          {/* MAIN CONTAINER */}
+          {!isSubmitted ? (
+            /* ================= MÀN HÌNH LÀM BÀI TRẮC NGHIỆM ================= */
+            <main className="w-full">
+              {/* Card Câu Hỏi Chính */}
+              <div className="glass-card rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all duration-300">
+                {/* Thanh Tiến Trình */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center text-xs sm:text-sm font-semibold text-gray-500 mb-1.5">
+                    <span className="flex items-center gap-1.5 text-sweetpink-600 font-bold">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-sweetpink-500 animate-ping"></span>
+                      Câu hỏi {currentIndex + 1} / {totalQuestions}
+                    </span>
+                    <span>Đã làm: {answeredCount}/{totalQuestions} ({Math.round((answeredCount / totalQuestions) * 100)}%)</span>
+                  </div>
+                  <div className="w-full bg-pink-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-pink-200/60">
+                    <div
+                      className="bg-gradient-to-r from-pink-400 to-sweetpink-500 h-full rounded-full transition-all duration-500 shadow-sm"
+                      style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Tiêu Đề Câu Hỏi */}
+                <div className="min-h-[70px] flex items-center justify-center text-center my-3">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 leading-snug">
+                    <span className="text-sweetpink-500 mr-2">#{currentQ.id}.</span>
+                    {currentQ.question}
+                  </h2>
+                </div>
+
+                {/* Danh Sách Các Lựa Chọn Đáp Án (A, B, C, D) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-6">
+                  {currentQ.options.map((opt) => {
+                    const isSelected = userAnswers[currentQ.id] === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        onClick={() => handleSelectOption(opt.key)}
+                        className={`group flex items-center p-4 rounded-2xl text-left border-2 transition-all duration-200 active:scale-[0.98] ${
+                          isSelected
+                            ? "bg-gradient-to-r from-sweetpink-500 to-rose-500 border-sweetpink-500 text-white shadow-lg shadow-pink-300/60 -translate-y-0.5"
+                            : "bg-white/80 hover:bg-pink-50/80 border-pink-200 text-gray-700 hover:border-pink-300 hover:shadow-md"
+                        }`}
+                      >
+                        <span
+                          className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl font-bold text-base mr-3.5 transition-colors ${
+                            isSelected
+                              ? "bg-white text-sweetpink-600 shadow-sm"
+                              : "bg-pink-100 text-sweetpink-600 group-hover:bg-sweetpink-200"
+                          }`}
+                        >
+                          {opt.key}
+                        </span>
+
+                        <span className={`text-base font-medium flex-1 ${isSelected ? "text-white" : "text-gray-800"}`}>
+                          {opt.text}
+                        </span>
+
+                        {isSelected && (
+                          <span className="ml-2 text-white text-lg animate-bounce-slow">
+                            💖
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Khu Vực Điều Hướng 3 Nút */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-pink-100">
+                  <button
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 transition-all ${
+                      currentIndex === 0
+                        ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400"
+                        : "bg-white/90 hover:bg-pink-50 text-gray-700 border border-pink-200 hover:border-pink-300 shadow-sm active:scale-95"
+                    }`}
+                  >
+                    <span>←</span> Trở về
+                  </button>
+
+                  <button
+                    onClick={handleSubmit}
+                    className="w-full sm:w-auto order-first sm:order-none px-7 py-3 rounded-2xl font-bold text-base bg-gradient-to-r from-sweetpink-500 via-rose-500 to-pink-500 hover:from-sweetpink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-400/50 hover:shadow-pink-400/80 transform hover:-translate-y-0.5 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <span>💌</span> Nộp bài ngay
+                  </button>
+
+                  <button
+                    onClick={handleNext}
+                    disabled={currentIndex === totalQuestions - 1}
+                    className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 transition-all ${
+                      currentIndex === totalQuestions - 1
+                        ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400"
+                        : "bg-sweetpink-100 hover:bg-sweetpink-200 text-sweetpink-700 border border-pink-300 shadow-sm active:scale-95"
+                    }`}
+                  >
+                    Tiếp theo <span>→</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* BẢNG ĐIỀU HƯỚNG CÂU HỎI (GRID 1-15 DƯỚI CÙNG) */}
+              <div className="glass-card rounded-2xl p-4 sm:p-5 mt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                    <span>📌</span> Danh sách câu hỏi:
+                  </h3>
+
+                  <div className="flex items-center gap-3 text-xs text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <span className="w-3.5 h-3.5 rounded-full bg-sweetpink-500 ring-2 ring-pink-300"></span> Đang xem
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-3.5 h-3.5 rounded-full bg-pink-200 border border-pink-400"></span> Đã làm
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-3.5 h-3.5 rounded-full bg-white border border-gray-300"></span> Chưa làm
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-15 gap-2">
+                  {QUIZ_DATA.map((q, idx) => {
+                    const isCurrent = idx === currentIndex;
+                    const isAnswered = userAnswers[q.id] !== undefined;
+
+                    let buttonClass = "bg-white/80 text-gray-600 border border-pink-200 hover:bg-pink-100/70";
+                    if (isCurrent) {
+                      buttonClass = "bg-sweetpink-500 text-white font-extrabold ring-4 ring-pink-300/70 scale-105 shadow-md shadow-pink-300 z-10";
+                    } else if (isAnswered) {
+                      buttonClass = "bg-pink-100 text-sweetpink-700 border-2 border-pink-400 font-bold hover:bg-pink-200";
+                    }
+
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => handleJumpToQuestion(idx)}
+                        className={`h-10 rounded-xl flex items-center justify-center text-sm transition-all duration-150 active:scale-95 relative ${buttonClass}`}
+                        title={`Câu ${q.id}: ${isAnswered ? 'Đã làm' : 'Chưa làm'}`}
+                      >
+                        {q.id}
+                        {isAnswered && !isCurrent && (
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-sweetpink-500 rounded-full border border-white"></span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </main>
+          ) : (
+            /* ================= MÀN HÌNH KẾT QUẢ (SAU KHI NỘP) ================= */
+            <main className="w-full">
+              {(() => {
+                const score = calculateScore();
+                const feedback = getFeedback(score);
+
+                return (
+                  <div className="space-y-6">
+                    {/* Bảng Điểm Tổng Quan */}
+                    <div className="glass-card rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+                      <div className="text-4xl mb-2 animate-bounce-slow">{feedback.icon}</div>
+                      
+                      <span className={`inline-block px-4 py-1 rounded-full text-xs sm:text-sm font-bold border mb-3 ${feedback.badgeBg}`}>
+                        {feedback.title}
+                      </span>
+
+                      <div className="my-2">
+                        <span className="text-gray-500 font-semibold text-lg">Điểm số của bạn:</span>
+                        <div className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sweetpink-600 via-rose-500 to-pink-500 my-1">
+                          {score} <span className="text-2xl sm:text-3xl text-gray-400 font-bold">/ {totalQuestions}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-sweetpink-600">
+                          (Đạt {Math.round((score / totalQuestions) * 100)}% độ chính xác)
+                        </span>
+                      </div>
+
+                      <p className="text-gray-700 text-sm sm:text-base max-w-lg mx-auto mt-3 bg-pink-50/70 p-4 rounded-2xl border border-pink-100">
+                        {feedback.message}
+                      </p>
+
+                      <div className="mt-6">
+                        <button
+                          onClick={handleRestart}
+                          className="px-6 py-2.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-sweetpink-500 to-rose-500 hover:from-sweetpink-600 hover:to-rose-600 text-white shadow-md shadow-pink-300 hover:shadow-lg transition-all active:scale-95 inline-flex items-center gap-2"
+                        >
+                          <span>🔄</span> Làm lại thử thách
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Chi Tiết Từng Câu Hỏi */}
+                    <div className="glass-card rounded-3xl p-6 sm:p-8">
+                      <div className="flex items-center justify-between border-b border-pink-100 pb-4 mb-6">
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
+                          <span>📋</span> Chi tiết đáp án từng câu hỏi
+                        </h2>
+                        <span className="text-xs font-semibold text-gray-500 bg-pink-100 px-3 py-1 rounded-full">
+                          {score}/{totalQuestions} câu đúng
+                        </span>
+                      </div>
+
+                      <div className="space-y-5">
+                        {QUIZ_DATA.map((q) => {
+                          const userChoiceKey = userAnswers[q.id];
+                          const isCorrect = userChoiceKey === q.correctAnswer;
+                          const isUnanswered = userChoiceKey === undefined;
+
+                          const userChoiceObj = q.options.find(o => o.key === userChoiceKey);
+                          const correctChoiceObj = q.options.find(o => o.key === q.correctAnswer);
+
+                          return (
+                            <div
+                              key={q.id}
+                              className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                                isCorrect
+                                  ? "bg-emerald-50/70 border-emerald-200"
+                                  : "bg-rose-50/70 border-rose-200"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <h3 className="font-bold text-gray-800 text-base">
+                                  <span className="text-sweetpink-600 mr-1.5">Câu {q.id}:</span>
+                                  {q.question}
+                                </h3>
+
+                                <span
+                                  className={`flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${
+                                    isCorrect
+                                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                      : "bg-rose-100 text-rose-800 border border-rose-300"
+                                  }`}
+                                >
+                                  {isCorrect ? "✅ Chính xác" : (isUnanswered ? "⚠️ Bỏ trống" : "❌ Chưa đúng")}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mt-3 pt-3 border-t border-gray-200/60">
+                                <div className={`p-2.5 rounded-xl flex items-center gap-2 ${
+                                  isCorrect
+                                    ? "bg-emerald-100/60 text-emerald-900 border border-emerald-200"
+                                    : "bg-rose-100/60 text-rose-900 border border-rose-200"
+                                }`}>
+                                  <span className="font-bold text-xs uppercase px-2 py-0.5 rounded bg-white/70">
+                                    Bạn chọn:
+                                  </span>
+                                  <span className="font-semibold">
+                                    {isUnanswered ? (
+                                      <i className="text-gray-400 font-normal">Chưa chọn đáp án</i>
+                                    ) : (
+                                      `${userChoiceObj?.key}. ${userChoiceObj?.text}`
+                                    )}
+                                  </span>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-white/80 text-emerald-900 border border-emerald-300 flex items-center gap-2 shadow-sm">
+                                  <span className="font-bold text-xs uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                    Đáp án đúng:
+                                  </span>
+                                  <span className="font-bold text-emerald-700">
+                                    {correctChoiceObj?.key}. {correctChoiceObj?.text}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
+                                {q.options.map((opt) => {
+                                  const isUserSelectedThis = opt.key === userChoiceKey;
+                                  const isThisCorrect = opt.key === q.correctAnswer;
+
+                                  let optBadge = "bg-white/60 text-gray-500 border border-gray-100";
+                                  if (isThisCorrect) {
+                                    optBadge = "bg-emerald-200/80 text-emerald-900 font-bold border border-emerald-400";
+                                  } else if (isUserSelectedThis && !isCorrect) {
+                                    optBadge = "bg-rose-200/80 text-rose-900 font-bold border border-rose-400 line-through opacity-80";
+                                  }
+
+                                  return (
+                                    <div key={opt.key} className={`px-2 py-1.5 rounded-lg text-center truncate ${optBadge}`} title={`${opt.key}. ${opt.text}`}>
+                                      {opt.key}. {opt.text}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mt-8 text-center">
+                        <button
+                          onClick={handleRestart}
+                          className="px-8 py-3 rounded-2xl font-bold text-base bg-gradient-to-r from-sweetpink-500 to-rose-500 hover:from-sweetpink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-300 transition-all active:scale-95"
+                        >
+                          🔄 Chơi lại từ đầu
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </main>
+          )}
+
+          {/* Modal Cảnh Báo Nếu Nộp Bài Khi Chưa Làm Hết */}
+          {showConfirmModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+              <div className="glass-card rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center border-2 border-pink-200 shadow-2xl">
+                <div className="text-4xl mb-2">💌❓</div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">Em có chắc muốn nộp?</h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Bạn vẫn còn <span className="font-bold text-sweetpink-600">{totalQuestions - answeredCount}</span> câu chưa trả lời. Nộp ngay hệ thống sẽ chấm các câu chưa làm là 0 điểm đó nha!
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowConfirmModal(false)}
+                    className="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                  >
+                    Làm tiếp
+                  </button>
+                  <button
+                    onClick={executeSubmit}
+                    className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-sweetpink-500 to-rose-500 text-white shadow-md shadow-pink-300 transition-all"
+                  >
+                    Vẫn nộp luôn
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer Dễ Thương */}
+          <footer className="text-center mt-8 py-4 text-xs text-sweetpink-600 font-medium">
+          anv
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
