@@ -45,7 +45,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Canvas Confetti for celebrations -->
+  <!-- Canvas Confetti for winning celebrations -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <!-- Google Fonts: Be Vietnam Pro & Dancing Script -->
@@ -80,15 +80,6 @@
       -webkit-backdrop-filter: blur(14px);
       border: 1.5px solid rgba(255, 255, 255, 0.75);
       box-shadow: 0 20px 40px -15px rgba(244, 63, 127, 0.25);
-    }
-
-    /* Dark Glassmorphism for Intro Card */
-    .dark-card {
-      background: rgba(15, 23, 42, 0.90);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
     }
 
     /* Custom Scrollbar */
@@ -218,7 +209,7 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // 15 Câu hỏi trắc nghiệm
+    // 15 Câu hỏi trắc nghiệm đúng chuẩn theo yêu cầu
     const QUIZ_DATA = [
       {
         id: 1,
@@ -387,7 +378,7 @@
       },
     ];
 
-    // Helper tạo UUID v4 độc nhất
+    // Helper sinh UUID v4
     function generateUUID() {
       if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         return crypto.randomUUID();
@@ -398,155 +389,137 @@
       });
     }
 
-    // Helper chuẩn hóa đường dẫn an toàn cho cả web server và file:// protocol
-    function getNormalizedPath() {
+    // Lấy route hiện tại tương thích cả web server và file://
+    function getCurrentRoute() {
       if (window.location.protocol === 'file:' && window.location.hash) {
         return window.location.hash.replace(/^#/, '');
       }
       if (window.location.hash && window.location.hash.startsWith('#/')) {
         return window.location.hash.replace(/^#/, '');
       }
-      const path = window.location.pathname;
-      return (path && path !== '/' && path !== '') ? path : '/question';
+      const p = window.location.pathname;
+      return (p && p !== '/' && p !== '') ? p : '/question';
     }
 
-    function setBrowserPath(path) {
+    // Cập nhật URL trình duyệt
+    function pushRoute(path) {
       try {
         if (window.location.protocol !== 'file:') {
           window.history.pushState(null, '', path);
         } else {
           window.location.hash = path;
         }
-      } catch (err) {
+      } catch (e) {
         window.location.hash = path;
       }
     }
 
     function App() {
-      // Quản lý route: /question, /question/1..15, /result/[uuid]
-      const [currentPath, setCurrentPath] = useState(getNormalizedPath());
-      
-      // Thông tin người làm
-      const [userName, setUserName] = useState(() => localStorage.getItem('quiz_user_name') || '');
-      const [showNameModal, setShowNameModal] = useState(false);
-      const [nameInput, setNameInput] = useState('');
+      const [currentRoute, setCurrentRoute] = useState(getCurrentRoute());
+      const [userName, setUserName] = useState('');
+      const [showNamePopup, setShowNamePopup] = useState(false);
+      const [nameInputValue, setNameInputValue] = useState('');
       const [nameError, setNameError] = useState('');
 
-      // Trạng thái bài thi hiện tại
       const [userAnswers, setUserAnswers] = useState({});
       const [showConfirmModal, setShowConfirmModal] = useState(false);
-      const [copiedLink, setCopiedLink] = useState(false);
-
-      // Trạng thái load bài thi đã nộp (ở route /result/[uuid])
-      const [loadedResult, setLoadedResult] = useState(null);
-      const [resultNotFound, setResultNotFound] = useState(false);
+      const [resultData, setResultData] = useState(null);
 
       const totalQuestions = QUIZ_DATA.length;
       const answeredCount = Object.keys(userAnswers).length;
 
-      // Hàm điều hướng
-      const navigate = (path) => {
-        setBrowserPath(path);
-        setCurrentPath(path);
+      // Điều hướng route
+      const navigateTo = (path) => {
+        pushRoute(path);
+        setCurrentRoute(path);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       };
 
-      // Lắng nghe sự kiện Back/Forward trên trình duyệt
+      // Lắng nghe thay đổi URL (Back / Forward)
       useEffect(() => {
-        const handlePopState = () => {
-          setCurrentPath(getNormalizedPath());
+        const handleLocationChange = () => {
+          setCurrentRoute(getCurrentRoute());
         };
-        window.addEventListener('popstate', handlePopState);
-        window.addEventListener('hashchange', handlePopState);
+        window.addEventListener('popstate', handleLocationChange);
+        window.addEventListener('hashchange', handleLocationChange);
         return () => {
-          window.removeEventListener('popstate', handlePopState);
-          window.removeEventListener('hashchange', handlePopState);
+          window.removeEventListener('popstate', handleLocationChange);
+          window.removeEventListener('hashchange', handleLocationChange);
         };
       }, []);
 
-      // Khởi tạo URL ban đầu nếu mở trang chủ '/'
+      // Khởi tạo URL ban đầu
       useEffect(() => {
-        const path = getNormalizedPath();
-        if (path === '/' || !path) {
-          navigate('/question');
+        const route = getCurrentRoute();
+        if (route === '/' || !route) {
+          navigateTo('/question');
         } else {
-          setCurrentPath(path);
+          setCurrentRoute(route);
         }
       }, []);
 
-      // Xử lý khi người dùng truy cập trực tiếp route /result/[uuid]
+      // Load dữ liệu khi truy cập /result/[uuid]
       useEffect(() => {
-        if (currentPath.startsWith('/result/')) {
-          const resultId = currentPath.replace('/result/', '').trim();
-          if (resultId) {
-            const rawData = localStorage.getItem(`quiz_result_${resultId}`);
-            if (rawData) {
+        if (currentRoute.startsWith('/result/')) {
+          const uuid = currentRoute.replace('/result/', '').trim();
+          if (uuid) {
+            const saved = localStorage.getItem(`quiz_result_${uuid}`);
+            if (saved) {
               try {
-                const parsed = JSON.parse(rawData);
-                setLoadedResult(parsed);
-                setResultNotFound(false);
+                const parsed = JSON.parse(saved);
+                setResultData(parsed);
                 if (typeof confetti === 'function') {
                   confetti({
-                    particleCount: 100,
+                    particleCount: 120,
                     spread: 70,
                     origin: { y: 0.6 },
-                    colors: ['#f43f7f', '#fb6f9f', '#ffd166', '#06d6a0'],
+                    colors: ['#f43f7f', '#fb6f9f', '#fecddf', '#ffd166', '#06d6a0'],
                   });
                 }
               } catch (e) {
-                setResultNotFound(true);
+                setResultData(null);
               }
             } else {
-              setResultNotFound(true);
+              setResultData(null);
             }
           }
         }
-      }, [currentPath]);
+      }, [currentRoute]);
 
-      // Phân tích trạng thái Route
+      // Xác định màn hình dựa trên route
+      const isIntro = currentRoute === '/question' || currentRoute === '/question/';
+      const isResult = currentRoute.startsWith('/result/');
       let currentQuestionIndex = 0;
-      let isQuestionPage = false;
-      let isIntroPage = false;
-      let isResultPage = false;
+      let isQuestion = false;
 
-      if (currentPath === '/question' || currentPath === '/question/') {
-        isIntroPage = true;
-      } else if (currentPath.startsWith('/question/')) {
-        const numStr = currentPath.replace('/question/', '');
-        const num = parseInt(numStr, 10);
-        if (!isNaN(num) && num >= 1 && num <= totalQuestions) {
-          currentQuestionIndex = num - 1;
-          isQuestionPage = true;
-        } else {
-          isIntroPage = true;
+      if (currentRoute.startsWith('/question/')) {
+        const qNum = parseInt(currentRoute.replace('/question/', ''), 10);
+        if (!isNaN(qNum) && qNum >= 1 && qNum <= totalQuestions) {
+          currentQuestionIndex = qNum - 1;
+          isQuestion = true;
         }
-      } else if (currentPath.startsWith('/result/')) {
-        isResultPage = true;
-      } else {
-        isIntroPage = true;
       }
 
       const currentQ = QUIZ_DATA[currentQuestionIndex];
 
-      // Khi nhấn "Bắt đầu Quiz" ở trang Intro
-      const handleStartQuizClick = () => {
-        setNameInput(userName);
+      // Khi nhấn "Bắt đầu Quiz" ở Intro
+      const handleStartClick = () => {
+        setNameInputValue(userName);
         setNameError('');
-        setShowNameModal(true);
+        setShowNamePopup(true);
       };
 
       // Xác nhận nhập tên
       const handleConfirmName = (e) => {
         e.preventDefault();
-        const trimmed = nameInput.trim();
+        const trimmed = nameInputValue.trim();
         if (!trimmed) {
-          setNameError('Em vui lòng nhập tên để anh biết ai đang thi nhé! 💖');
+          setNameError('Nhập tên tr khi bắt đầu');
           return;
         }
         setUserName(trimmed);
-        localStorage.setItem('quiz_user_name', trimmed);
-        setShowNameModal(false);
-        navigate('/question/1');
+        setShowNamePopup(false);
+        navigateTo('/question/1');
       };
 
       // Chọn đáp án
@@ -557,24 +530,24 @@
         }));
       };
 
-      // Chuyển câu hỏi theo đúng format URL /question/[số-thứ-tự]
+      // Điều hướng câu hỏi
       const handleNext = () => {
         if (currentQuestionIndex < totalQuestions - 1) {
-          navigate(`/question/${currentQuestionIndex + 2}`);
+          navigateTo(`/question/${currentQuestionIndex + 2}`);
         }
       };
 
       const handlePrev = () => {
         if (currentQuestionIndex > 0) {
-          navigate(`/question/${currentQuestionIndex}`);
+          navigateTo(`/question/${currentQuestionIndex}`);
         }
       };
 
       const handleJumpToQuestion = (index) => {
-        navigate(`/question/${index + 1}`);
+        navigateTo(`/question/${index + 1}`);
       };
 
-      // Tính tổng điểm
+      // Tính điểm
       const calculateScore = (answers) => {
         let score = 0;
         QUIZ_DATA.forEach((q) => {
@@ -585,7 +558,7 @@
         return score;
       };
 
-      // Xử lý nộp bài
+      // Nộp bài
       const handleSubmit = () => {
         if (answeredCount < totalQuestions) {
           setShowConfirmModal(true);
@@ -597,38 +570,22 @@
       const executeSubmit = () => {
         setShowConfirmModal(false);
         const score = calculateScore(userAnswers);
-        const uniqueId = generateUUID();
+        const uuid = generateUUID();
 
-        // Lưu toàn bộ dữ liệu bài thi vào localStorage
-        const resultRecord = {
-          id: uniqueId,
-          userName: userName || 'Em bé',
+        const dataToSave = {
+          userName: userName || 'Người tham gia',
           userAnswers: userAnswers,
           score: score,
-          totalQuestions: totalQuestions,
-          submittedAt: new Date().toLocaleString('vi-VN'),
         };
 
-        localStorage.setItem(`quiz_result_${uniqueId}`, JSON.stringify(resultRecord));
-
-        // Chuyển hướng ngay đến URL kết quả độc nhất /result/[uuid]
-        navigate(`/result/${uniqueId}`);
+        localStorage.setItem(`quiz_result_${uuid}`, JSON.stringify(dataToSave));
+        navigateTo(`/result/${uuid}`);
       };
 
-      // Sao chép link kết quả
-      const handleCopyResultLink = () => {
-        const fullUrl = window.location.href;
-        navigator.clipboard.writeText(fullUrl).then(() => {
-          setCopiedLink(true);
-          setTimeout(() => setCopiedLink(false), 2500);
-        });
-      };
-
-      // Lời chúc & đánh giá theo mức điểm
       const getFeedback = (score) => {
         if (score === 15) {
           return {
-            title: "Tâm Đầu Ý Hợp 100%! 👩‍❤️‍👨",
+            title: "Tâm Đầu Ý Hợp 100%! 👩❤️👨",
             message: "God damn! Trl đúng hết như này xứng đáng đc nhận 1 nụ hôn lốc xoáy kiểu Pháp 😇",
             badgeBg: "bg-emerald-100 text-emerald-800 border-emerald-300",
             icon: "🏆💖✨",
@@ -659,8 +616,8 @@
 
       return (
         <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-3xl mx-auto">
-          {/* Header Trang Web (Chỉ hiển thị khi làm bài hoặc xem kết quả) */}
-          {!isIntroPage && (
+          {/* Header Trang Web */}
+          {!isIntro && (
             <header className="text-center mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 backdrop-blur-md shadow-sm border border-pink-200 text-sweetpink-600 text-sm font-semibold tracking-wide uppercase mb-2">
                 <span className="animate-pulse">💖</span> Bộ câu hỏi về anh <span className="animate-pulse">💖</span>
@@ -668,58 +625,31 @@
               <h1 className="text-3xl sm:text-4xl font-extrabold text-sweetpink-600 font-cute tracking-wide drop-shadow-sm">
                 Em Hiểu Anh Đến Đâu?
               </h1>
-              {userName && (
-                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-pink-100/80 border border-pink-300/80 rounded-full text-xs sm:text-sm text-sweetpink-700 font-semibold">
-                  <span>🌸 Thí sinh:</span> <span className="font-bold underline">{userName}</span>
-                </div>
-              )}
+              <p className="text-sm sm:text-base text-gray-600 mt-1 max-w-md mx-auto">
+                Hãy trả lời 15 câu hỏi về anh để xem em hiểu anh đến đâu
+              </p>
             </header>
           )}
 
-          {/* ================= 1. TRANG GIỚI THIỆU (INTRO TẠI /question) ================= */}
-          {isIntroPage && (
-            <main className="flex-1 flex flex-col items-center justify-center my-auto py-8">
-              <div className="dark-card rounded-3xl p-8 sm:p-12 text-center text-white max-w-lg w-full relative overflow-hidden transition-all duration-300 transform hover:scale-[1.01]">
-                {/* Glow trang trí */}
-                <div className="absolute -top-16 -right-16 w-44 h-44 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-rose-500/20 rounded-full blur-3xl pointer-events-none"></div>
-
-                {/* Badge Intro */}
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-pink-300 text-xs sm:text-sm font-semibold uppercase tracking-wider mb-4">
-                  <span>✨</span> Thử Thách Cặp Đôi <span>✨</span>
-                </div>
-
-                {/* Tiêu Đề Bài Quiz */}
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-pink-400 font-cute tracking-wide drop-shadow-md mb-3">
-                  Em Hiểu Anh Đến Đâu? 💖
+          {/* ================= 1. TRANG GIỚI THIỆU (TẠI /question) ================= */}
+          {isIntro && (
+            <main className="flex-1 flex flex-col items-center justify-center my-auto min-h-[70vh]">
+              <div className="bg-gray-900/90 text-white rounded-3xl p-8 sm:p-12 text-center max-w-md w-full shadow-2xl border border-gray-700/50 backdrop-blur-md">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-sweetpink-400 font-cute tracking-wide drop-shadow-sm mb-6">
+                  Em Hiểu Anh Đến Mức Nào? 💖
                 </h1>
-
-                <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-8 max-w-sm mx-auto">
-                  Bộ câu hỏi 15 câu trắc nghiệm thú vị về sở thích, thói quen và tính cách của anh. Cùng kiểm tra xem chúng mình có thực sự tâm đầu ý hợp không nhé!
-                </p>
-
-                {/* Nút Bắt Đầu Quiz kèm Icon */}
                 <button
-                  onClick={handleStartQuizClick}
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-base sm:text-lg bg-gradient-to-r from-sweetpink-500 via-rose-500 to-pink-500 hover:from-sweetpink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-500/40 hover:shadow-pink-500/60 transform hover:-translate-y-0.5 active:scale-95 transition-all duration-200 inline-flex items-center justify-center gap-2.5 mx-auto"
+                  onClick={handleStartClick}
+                  className="px-8 py-3.5 rounded-2xl font-bold text-base bg-gradient-to-r from-sweetpink-500 to-rose-500 hover:from-sweetpink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-500/30 transition-all active:scale-95 inline-flex items-center gap-2"
                 >
-                  <span className="text-xl">🚀</span>
-                  <span>Bắt đầu Quiz</span>
-                  <span className="text-xl">✨</span>
+                  <span>💓</span> Bắt đầu
                 </button>
-
-                {/* Dòng chữ nhỏ hiển thị nguồn / credit ở dưới cùng khung */}
-                <div className="mt-8 pt-5 border-t border-slate-700/60 text-xs text-slate-400 flex items-center justify-center gap-1">
-                  <span>Nguồn: Bộ câu hỏi độc quyền</span>
-                  <span>•</span>
-                  <span className="text-pink-400">Thiết kế bởi Anh Ấy with ❤️</span>
-                </div>
               </div>
             </main>
           )}
 
-          {/* ================= 2. TRANG LÀM BÀI CÂU HỎI (/question/1..15) ================= */}
-          {isQuestionPage && (
+          {/* ================= 2. TRANG LÀM BÀI TRẮC NGHIỆM (/question/[1..15]) ================= */}
+          {isQuestion && (
             <main className="w-full">
               {/* Card Câu Hỏi Chính */}
               <div className="glass-card rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all duration-300">
@@ -872,32 +802,18 @@
             </main>
           )}
 
-          {/* ================= 3. TRANG KẾT QUẢ ĐỘC NHẤT (/result/[uuid]) ================= */}
-          {isResultPage && (
+          {/* ================= 3. MÀN HÌNH KẾT QUẢ (/result/[uuid]) ================= */}
+          {isResult && (
             <main className="w-full">
-              {resultNotFound ? (
-                <div className="glass-card rounded-3xl p-8 text-center max-w-md mx-auto">
-                  <div className="text-4xl mb-3">🥺💔</div>
-                  <h2 className="text-xl font-bold text-gray-800 mb-2">Không tìm thấy bài làm</h2>
-                  <p className="text-sm text-gray-600 mb-6">
-                    Link kết quả này chưa tồn tại hoặc dữ liệu chưa được lưu trên trình duyệt này!
-                  </p>
-                  <button
-                    onClick={() => navigate('/question')}
-                    className="px-6 py-2.5 rounded-xl font-bold text-sm bg-sweetpink-500 text-white hover:bg-sweetpink-600 transition-colors shadow-md"
-                  >
-                    Về trang bắt đầu
-                  </button>
-                </div>
-              ) : loadedResult ? (
+              {resultData ? (
                 (() => {
-                  const score = loadedResult.score;
+                  const score = resultData.score;
                   const feedback = getFeedback(score);
-                  const answers = loadedResult.userAnswers || {};
+                  const answers = resultData.userAnswers || {};
 
                   return (
                     <div className="space-y-6">
-                      {/* Bảng Điểm Tổng Quan (Đã xóa toàn bộ nút làm lại) */}
+                      {/* Bảng Điểm Tổng Quan (Đã loại bỏ hoàn toàn nút làm lại) */}
                       <div className="glass-card rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
                         <div className="text-4xl mb-2 animate-bounce-slow">{feedback.icon}</div>
                         
@@ -907,7 +823,7 @@
 
                         <div className="my-2">
                           <span className="text-gray-500 font-semibold text-lg">
-                            Điểm số của <span className="text-sweetpink-600 font-bold">{loadedResult.userName}</span>:
+                            Điểm số của {resultData.userName}:
                           </span>
                           <div className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sweetpink-600 via-rose-500 to-pink-500 my-1">
                             {score} <span className="text-2xl sm:text-3xl text-gray-400 font-bold">/ {totalQuestions}</span>
@@ -920,38 +836,13 @@
                         <p className="text-gray-700 text-sm sm:text-base max-w-lg mx-auto mt-3 bg-pink-50/70 p-4 rounded-2xl border border-pink-100">
                           {feedback.message}
                         </p>
-
-                        <div className="mt-4 text-xs text-gray-400 font-medium">
-                          Thời gian nộp: {loadedResult.submittedAt}
-                        </div>
-
-                        {/* Hộp chia sẻ link kết quả độc nhất */}
-                        <div className="mt-6 pt-5 border-t border-pink-100 max-w-md mx-auto">
-                          <label className="block text-xs font-bold text-gray-600 mb-1.5 text-left">
-                            🔗 Link kết quả độc nhất của bạn (lưu lại để xem bất cứ lúc nào):
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              readOnly
-                              value={window.location.href}
-                              className="flex-1 bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-gray-600 outline-none select-all"
-                            />
-                            <button
-                              onClick={handleCopyResultLink}
-                              className="px-4 py-2 bg-sweetpink-500 hover:bg-sweetpink-600 text-white rounded-xl text-xs font-bold transition-colors shadow-sm whitespace-nowrap active:scale-95"
-                            >
-                              {copiedLink ? "Đã chép! ✅" : "Sao chép 📋"}
-                            </button>
-                          </div>
-                        </div>
                       </div>
 
-                      {/* Chi Tiết Từng Câu Hỏi */}
+                      {/* Chi Tiết Từng Câu Hỏi (Đã loại bỏ nút Chơi lại từ đầu) */}
                       <div className="glass-card rounded-3xl p-6 sm:p-8">
                         <div className="flex items-center justify-between border-b border-pink-100 pb-4 mb-6">
                           <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <span>📋</span> Chi tiết bài làm của {loadedResult.userName}
+                            <span>📋</span> Chi tiết đáp án từng câu hỏi
                           </h2>
                           <span className="text-xs font-semibold text-gray-500 bg-pink-100 px-3 py-1 rounded-full">
                             {score}/{totalQuestions} câu đúng
@@ -1049,64 +940,51 @@
                   );
                 })()
               ) : (
-                <div className="text-center py-12 text-gray-500 font-medium">
-                  Đang tải kết quả bài thi...
+                <div className="glass-card rounded-3xl p-8 text-center max-w-md mx-auto">
+                  <div className="text-4xl mb-3">🥺💔</div>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">Không tìm thấy bài làm</h2>
+                  <p className="text-sm text-gray-600">
+                    Không tìm thấy dữ liệu bài làm của đường dẫn này.
+                  </p>
                 </div>
               )}
             </main>
           )}
 
-          {/* ================= MODAL NHẬP TÊN TRƯỚC KHI THI ================= */}
-          {showNameModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-              <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center border-2 border-pink-200 shadow-2xl relative">
-                <div className="text-4xl mb-2 animate-bounce-slow">🌸📝</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-1">Chào em bé đáng yêu!</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mb-5">
-                  Trước khi bắt đầu, hãy cho anh biết tên hoặc biệt danh của em nhé:
-                </p>
-
+          {/* ================= FORM / POPUP NHẬP TÊN BẮT BUỘC ================= */}
+          {showNamePopup && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center border-2 border-pink-200 shadow-2xl">
+                <h3 className="text-xl font-bold text-gray-800 mb-3">Nhập Tên Của Bạn</h3>
                 <form onSubmit={handleConfirmName}>
-                  <div className="mb-4 text-left">
+                  <div className="mb-4">
                     <input
                       type="text"
                       autoFocus
-                      value={nameInput}
+                      value={nameInputValue}
                       onChange={(e) => {
-                        setNameInput(e.target.value);
+                        setNameInputValue(e.target.value);
                         if (nameError) setNameError('');
                       }}
-                      placeholder="Ví dụ: Bé Mèo, Công chúa nhỏ..."
-                      className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-pink-200 focus:border-sweetpink-500 focus:ring-4 focus:ring-pink-100 outline-none transition-all text-sm font-semibold text-gray-800"
+                      placeholder="Nhập tên của bạn..."
+                      className="w-full px-4 py-2.5 rounded-xl border border-pink-200 focus:border-sweetpink-500 focus:outline-none text-sm"
                     />
                     {nameError && (
-                      <p className="text-rose-500 text-xs font-semibold mt-1.5 pl-1">
-                        {nameError}
-                      </p>
+                      <p className="text-rose-500 text-xs mt-1.5 text-left">{nameError}</p>
                     )}
                   </div>
-
-                  <div className="flex gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setShowNameModal(false)}
-                      className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                    >
-                      Để sau
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-sweetpink-500 to-rose-500 hover:from-sweetpink-600 hover:to-rose-600 text-white shadow-md shadow-pink-300 transition-all active:scale-95"
-                    >
-                      Bắt đầu thi 🎯
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-sweetpink-500 to-rose-500 text-white shadow-md active:scale-95 transition-all"
+                  >
+                    Xác nhận
+                  </button>
                 </form>
               </div>
             </div>
           )}
 
-          {/* ================= MODAL CẢNH BÁO NỘP BÀI CHƯA LÀM HẾT ================= */}
+          {/* Modal Cảnh Báo Nếu Nộp Bài Khi Chưa Làm Hết */}
           {showConfirmModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
               <div className="glass-card rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center border-2 border-pink-200 shadow-2xl">
@@ -1132,11 +1010,6 @@
               </div>
             </div>
           )}
-
-          {/* Footer Dễ Thương */}
-          <footer className="text-center mt-8 py-4 text-xs text-sweetpink-600 font-medium">
-            Thiết kế riêng cho cặp đôi 💖 Made with love & React + Tailwind CSS
-          </footer>
         </div>
       );
     }
