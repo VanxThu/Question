@@ -207,30 +207,20 @@
       { id: 15, question: "Anh ưu tiên giải quyết vấn đề theo hướng nào?", options: [{ key: "A", text: "Nhờ người khác giúp đỡ" }, { key: "B", text: "Trốn tránh vấn đề" }, { key: "C", text: "Để cxuc lấn át" }, { key: "D", text: "Bình tĩnh giải quyết" }], correctAnswer: "D" },
     ];
 
+    // SỬ DỤNG HASH ROUTING ĐỂ HOẠT ĐỘNG TỐT TRÊN GITHUB PAGES/VERCEL
     function getNormalizedPath() {
-      if (window.location.protocol === 'file:' && window.location.hash) {
-        return window.location.hash.replace(/^#/, '');
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#/')) {
+        return hash.replace(/^#/, '');
       }
-      if (window.location.hash && window.location.hash.startsWith('#/')) {
-        return window.location.hash.replace(/^#/, '');
-      }
-      const path = window.location.pathname;
-      return (path && path !== '/' && path !== '') ? path : '/question';
+      return '/question';
     }
 
     function setBrowserPath(path) {
-      try {
-        if (window.location.protocol !== 'file:') {
-          window.history.pushState(null, '', path);
-        } else {
-          window.location.hash = path;
-        }
-      } catch (err) {
-        window.location.hash = path;
-      }
+      window.location.hash = path;
     }
 
-    // LINK API GOOGLE SHEETS CỦA BẠN 
+    // LINK API GOOGLE SHEETS MỚI CỦA BẠN
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbybKeSmJku_AKib1b2tHHTuugQbEQrkPs5nV51_tZkmLPyaABtDSyFnJ1XtQam8sySXmQ/exec';
 
     function App() {
@@ -243,9 +233,11 @@
       const [userAnswers, setUserAnswers] = useState({});
       const [showConfirmModal, setShowConfirmModal] = useState(false);
       const [isSubmitting, setIsSubmitting] = useState(false);
+      const [isLoadingResult, setIsLoadingResult] = useState(false);
 
       const [loadedResult, setLoadedResult] = useState(null);
       const [resultNotFound, setResultNotFound] = useState(false);
+      const [copiedLink, setCopiedLink] = useState(false);
 
       const totalQuestions = QUIZ_DATA.length;
       const answeredCount = Object.keys(userAnswers).length;
@@ -257,33 +249,48 @@
       };
 
       useEffect(() => {
-        const handlePopState = () => setCurrentPath(getNormalizedPath());
-        window.addEventListener('popstate', handlePopState);
-        window.addEventListener('hashchange', handlePopState);
+        const handleHashChange = () => setCurrentPath(getNormalizedPath());
+        window.addEventListener('hashchange', handleHashChange);
         return () => {
-          window.removeEventListener('popstate', handlePopState);
-          window.removeEventListener('hashchange', handlePopState);
+          window.removeEventListener('hashchange', handleHashChange);
         };
       }, []);
 
+      // Logic nạp dữ liệu nếu vào link dạng /#/result/1
       useEffect(() => {
-        const path = getNormalizedPath();
-        if (path === '/' || !path) {
-          navigate('/question');
-        } else {
-          setCurrentPath(path);
-        }
-      }, []);
-
-      useEffect(() => {
-        if (currentPath === '/result' || currentPath === '/result/') {
-          if (!loadedResult) {
-            setResultNotFound(true);
-          } else {
+        if (currentPath.startsWith('/result/')) {
+          const resultId = currentPath.replace('/result/', '');
+          if (resultId) {
+            setIsLoadingResult(true);
             setResultNotFound(false);
+            
+            // Gọi API lấy dữ liệu kết quả theo ID
+            fetch(`${GOOGLE_SCRIPT_URL}?action=get&id=${resultId}`)
+              .then(res => res.json())
+              .then(data => {
+                setIsLoadingResult(false);
+                if (data.status === 'success') {
+                  setLoadedResult({
+                    id: data.data.id,
+                    userName: data.data.name,
+                    score: data.data.score,
+                    userAnswers: data.data.answers,
+                    submittedAt: data.data.time
+                  });
+                  if (typeof confetti === 'function') {
+                    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#f43f7f', '#fb6f9f', '#ffd166', '#06d6a0'] });
+                  }
+                } else {
+                  setResultNotFound(true);
+                }
+              })
+              .catch(() => {
+                setIsLoadingResult(false);
+                setResultNotFound(true);
+              });
           }
         }
-      }, [currentPath, loadedResult]);
+      }, [currentPath]);
 
       let currentQuestionIndex = 0;
       let isQuestionPage = false;
@@ -301,7 +308,7 @@
         } else {
           isIntroPage = true;
         }
-      } else if (currentPath.startsWith('/result')) {
+      } else if (currentPath.startsWith('/result/')) {
         isResultPage = true;
       } else {
         isIntroPage = true;
@@ -360,55 +367,39 @@
         }
       };
 
-      // Gửi dữ liệu bằng Google Sheets API
       const executeSubmit = async () => {
         setShowConfirmModal(false);
-        setIsSubmitting(true); // Hiện màn hình loading
+        setIsSubmitting(true);
 
         const score = calculateScore(userAnswers);
-        const submitTime = new Date().toLocaleString('vi-VN');
         
-        const dataToSave = {
-          name: userName || 'Em bé',
-          score: score,
-          answers: userAnswers,
-          time: submitTime
-        };
-
+        // Gọi API lưu dữ liệu
+        const url = `${GOOGLE_SCRIPT_URL}?action=save&name=${encodeURIComponent(userName || 'Em bé')}&score=${score}&answers=${encodeURIComponent(JSON.stringify(userAnswers))}`;
+        
         try {
-          // Bắn dữ liệu về Sheets
-          await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Rất quan trọng để tránh lỗi CORS của Google
-            headers: {
-              'Content-Type': 'text/plain;charset=utf-8',
-            },
-            body: JSON.stringify(dataToSave)
-          });
+          const res = await fetch(url);
+          const data = await res.json();
+          setIsSubmitting(false);
+          
+          if (data.status === 'success') {
+             // Tự động chuyển hướng tới link kết quả vừa được cấp (VD: /#/result/1)
+             navigate(`/result/${data.id}`);
+          } else {
+            alert("Có lỗi khi nộp bài. Em kiểm tra lại mạng nhé!");
+          }
         } catch (error) {
-          console.error("Lỗi khi gửi kết quả: ", error);
+          console.error("Lỗi khi nộp bài:", error);
+          setIsSubmitting(false);
+          alert("Không thể kết nối đến máy chủ. Em kiểm tra lại mạng nhé!");
         }
+      };
 
-        // Lưu tạm kết quả vào RAM để hiện màn hình báo cáo chi tiết cho người làm
-        setLoadedResult({
-          userName: dataToSave.name,
-          score: dataToSave.score,
-          userAnswers: dataToSave.answers,
-          submittedAt: dataToSave.time
+      const handleCopyResultLink = () => {
+        const fullUrl = window.location.href;
+        navigator.clipboard.writeText(fullUrl).then(() => {
+          setCopiedLink(true);
+          setTimeout(() => setCopiedLink(false), 2500);
         });
-
-        setIsSubmitting(false);
-        navigate('/result');
-
-        // Pháo giấy chúc mừng
-        if (typeof confetti === 'function') {
-          confetti({
-            particleCount: 120,
-            spread: 80,
-            origin: { y: 0.6 },
-            colors: ['#f43f7f', '#fb6f9f', '#ffd166', '#06d6a0'],
-          });
-        }
       };
 
       const getFeedback = (score) => {
@@ -446,14 +437,13 @@
       return (
         <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-3xl mx-auto">
           
-          {/* MÀN HÌNH LOADING KHI ĐANG BẮN DỮ LIỆU */}
+          {/* MÀN HÌNH LOADING */}
           {isSubmitting && (
             <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
               <div className="glass-card p-8 rounded-3xl text-center flex flex-col items-center max-w-sm w-full border-2 border-pink-200">
                 <div className="text-5xl animate-bounce mb-5">🚀💌</div>
                 <h3 className="text-xl font-bold text-gray-800">Đang gửi kết quả cho anh...</h3>
                 <p className="text-sm text-gray-500 mt-2 font-medium">Chờ một xíu nhé! 💖</p>
-                
                 <div className="w-full bg-pink-100 h-2.5 rounded-full mt-6 overflow-hidden">
                   <div className="bg-gradient-to-r from-sweetpink-400 to-rose-500 h-full w-full animate-pulse"></div>
                 </div>
@@ -484,7 +474,7 @@
                 <div className="absolute -top-16 -right-16 w-44 h-44 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-rose-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-pink-300 text-xs sm:text-sm font-semibold uppercase tracking-wider mb-4">
-                 
+                  <span>✨</span><span>✨</span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-pink-400 font-cute tracking-wide drop-shadow-md mb-3">
                   Em Hiểu Anh Đến Đâu? 💖
@@ -627,14 +617,16 @@
             </main>
           )}
 
-          {/* 3. TRANG KẾT QUẢ SAU KHI NỘP */}
+          {/* 3. TRANG KẾT QUẢ SAU KHI NỘP & GET DATA */}
           {isResultPage && (
             <main className="w-full">
-              {resultNotFound ? (
+              {isLoadingResult ? (
+                <div className="text-center py-12 text-gray-500 font-medium">Đang tải kết quả bài thi...</div>
+              ) : resultNotFound ? (
                 <div className="glass-card rounded-3xl p-8 text-center max-w-md mx-auto">
                   <div className="text-4xl mb-3">🥺💔</div>
-                  <h2 className="text-xl font-bold text-gray-800 mb-2">Không có dữ liệu bài làm</h2>
-                  <p className="text-sm text-gray-600 mb-6">Em chưa hoàn thành bài thi hoặc dữ liệu đã được làm mới.</p>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">Không tìm thấy bài làm</h2>
+                  <p className="text-sm text-gray-600 mb-6">Em chưa hoàn thành bài thi hoặc link kết quả không hợp lệ.</p>
                   <button onClick={() => navigate('/question')} className="px-6 py-2.5 rounded-xl font-bold text-sm bg-sweetpink-500 text-white hover:bg-sweetpink-600 shadow-md">
                     Làm lại bài thi
                   </button>
@@ -670,13 +662,20 @@
                         </p>
 
                         <div className="mt-4 text-xs text-gray-400 font-medium">
-                          Nộp lúc: {loadedResult.submittedAt}
+                          Nộp lúc: {loadedResult.submittedAt} (ID: #{loadedResult.id})
                         </div>
 
+                        {/* Thanh Copy Link dành cho người thi gửi lại cho bạn */}
                         <div className="mt-6 pt-5 border-t border-pink-100 max-w-md mx-auto">
-                           <div className="bg-emerald-50 text-emerald-700 px-4 py-3.5 rounded-2xl border-2 border-emerald-200 font-bold text-sm flex items-center justify-center gap-2 shadow-sm">
-                             <span className="text-lg">💌</span> Kết quả của em đã được bí mật gửi cho anh!
-                           </div>
+                          <label className="block text-xs font-bold text-gray-600 mb-1.5 text-left">
+                            🔗 Copy link này gửi lại cho anh ấy xem nhé:
+                          </label>
+                          <div className="flex gap-2">
+                            <input type="text" readOnly value={window.location.href} className="flex-1 bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-gray-600 outline-none" />
+                            <button onClick={handleCopyResultLink} className="px-4 py-2 bg-sweetpink-500 hover:bg-sweetpink-600 text-white rounded-xl text-xs font-bold shadow-sm transition-colors active:scale-95">
+                              {copiedLink ? "Đã chép! ✅" : "Sao chép 📋"}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -764,7 +763,6 @@
                     <input
                       type="text" autoFocus value={nameInput}
                       onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
-                      
                       className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-pink-200 focus:border-sweetpink-500 focus:ring-4 focus:ring-pink-100 outline-none text-sm font-semibold text-gray-800"
                     />
                     {nameError && <p className="text-rose-500 text-xs font-semibold mt-1.5 pl-1">{nameError}</p>}
