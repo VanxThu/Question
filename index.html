@@ -5,102 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Em Hiểu Anh Đến Mức Nào? 💖</title>
   
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            sweetpink: {
-              50: '#fff0f5',
-              100: '#ffe4ee',
-              200: '#fecddf',
-              300: '#fea3c5',
-              400: '#fb6f9f',
-              500: '#f43f7f',
-              600: '#e11d67',
-              700: '#be1254',
-              800: '#9e1247',
-            }
-          },
-          animation: {
-            'bounce-slow': 'bounce 2.5s infinite',
-            'pulse-fast': 'pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'float': 'float 3s ease-in-out infinite',
-          },
-          keyframes: {
-            float: {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-8px)' },
-            }
-          }
+          colors: { sweetpink: { 50: '#fff0f5', 100: '#ffe4ee', 200: '#fecddf', 300: '#fea3c5', 400: '#fb6f9f', 500: '#f43f7f', 600: '#e11d67', 700: '#be1254', 800: '#9e1247' } },
+          animation: { 'bounce-slow': 'bounce 2.5s infinite', 'pulse-fast': 'pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite', 'float': 'float 3s ease-in-out infinite' },
+          keyframes: { float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-8px)' } } }
         }
       }
     }
   </script>
 
-  <!-- React 18, ReactDOM & Babel -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-  <!-- Google Fonts -->
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      font-family: 'Be Vietnam Pro', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .font-cute {
-      font-family: 'Dancing Script', cursive;
-    }
-    
-    #hearts-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .glass-card {
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1.5px solid rgba(255, 255, 255, 0.75);
-      box-shadow: 0 20px 40px -15px rgba(244, 63, 127, 0.25);
-    }
-
-    .dark-card {
-      background: rgba(15, 23, 42, 0.90);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
-    }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #ffe4ee;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #fb6f9f;
-      border-radius: 999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #f43f7f;
-    }
+    * { font-family: 'Be Vietnam Pro', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .font-cute { font-family: 'Dancing Script', cursive; }
+    #hearts-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .glass-card { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1.5px solid rgba(255, 255, 255, 0.75); box-shadow: 0 20px 40px -15px rgba(244, 63, 127, 0.25); }
+    .dark-card { background: rgba(15, 23, 42, 0.90); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #ffe4ee; }
+    ::-webkit-scrollbar-thumb { background: #fb6f9f; border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f43f7f; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-pink-200 text-gray-800 antialiased selection:bg-pink-300 selection:text-pink-900 relative overflow-x-hidden">
@@ -121,41 +57,26 @@
       });
 
       class Heart {
-        constructor() {
-          this.reset(true);
-        }
+        constructor() { this.reset(true); }
         reset(initial = false) {
-          this.x = Math.random() * width;
-          this.y = initial ? Math.random() * height : height + 30;
-          this.size = Math.random() * 18 + 10;
-          this.speedY = Math.random() * 1.2 + 0.6;
-          this.speedX = (Math.random() - 0.5) * 0.7;
-          this.opacity = Math.random() * 0.55 + 0.25;
-          this.oscillationSpeed = Math.random() * 0.03 + 0.01;
-          this.oscillationDistance = Math.random() * 25 + 10;
-          this.angle = Math.random() * Math.PI * 2;
-          this.rotation = (Math.random() - 0.5) * 0.4;
+          this.x = Math.random() * width; this.y = initial ? Math.random() * height : height + 30;
+          this.size = Math.random() * 18 + 10; this.speedY = Math.random() * 1.2 + 0.6;
+          this.speedX = (Math.random() - 0.5) * 0.7; this.opacity = Math.random() * 0.55 + 0.25;
+          this.oscillationSpeed = Math.random() * 0.03 + 0.01; this.oscillationDistance = Math.random() * 25 + 10;
+          this.angle = Math.random() * Math.PI * 2; this.rotation = (Math.random() - 0.5) * 0.4;
           const colors = ['255, 105, 180', '255, 182, 193', '254, 163, 197', '244, 63, 127', '251, 111, 159', '238, 130, 238'];
           this.color = colors[Math.floor(Math.random() * colors.length)];
         }
         update() {
-          this.y -= this.speedY;
-          this.angle += this.oscillationSpeed;
+          this.y -= this.speedY; this.angle += this.oscillationSpeed;
           this.currentX = this.x + Math.sin(this.angle) * this.oscillationDistance;
           if (this.y < -40) this.reset(false);
         }
         draw() {
-          ctx.save();
-          ctx.translate(this.currentX, this.y);
-          ctx.rotate(this.rotation);
-          ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
-          ctx.beginPath();
-          const d = this.size;
-          ctx.moveTo(0, 0);
-          ctx.bezierCurveTo(-d / 2, -d / 2, -d, d / 3, 0, d);
-          ctx.bezierCurveTo(d, d / 3, d / 2, -d / 2, 0, 0);
-          ctx.fill();
-          ctx.restore();
+          ctx.save(); ctx.translate(this.currentX, this.y); ctx.rotate(this.rotation);
+          ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`; ctx.beginPath(); const d = this.size;
+          ctx.moveTo(0, 0); ctx.bezierCurveTo(-d / 2, -d / 2, -d, d / 3, 0, d);
+          ctx.bezierCurveTo(d, d / 3, d / 2, -d / 2, 0, 0); ctx.fill(); ctx.restore();
         }
       }
 
@@ -164,22 +85,15 @@
 
       function animate() {
         ctx.clearRect(0, 0, width, height);
-        for (let i = 0; i < hearts.length; i++) {
-          hearts[i].update();
-          hearts[i].draw();
-        }
+        for (let i = 0; i < hearts.length; i++) { hearts[i].update(); hearts[i].draw(); }
         requestAnimationFrame(animate);
       }
       animate();
 
       window.addEventListener('click', (e) => {
         for (let i = 0; i < 4; i++) {
-          const h = new Heart();
-          h.x = e.clientX;
-          h.y = e.clientY;
-          h.speedY = Math.random() * 2 + 1;
-          h.size = Math.random() * 14 + 8;
-          hearts.push(h);
+          const h = new Heart(); h.x = e.clientX; h.y = e.clientY;
+          h.speedY = Math.random() * 2 + 1; h.size = Math.random() * 14 + 8; hearts.push(h);
           if (hearts.length > count + 15) hearts.shift();
         }
       });
@@ -207,7 +121,6 @@
       { id: 15, question: "Anh ưu tiên giải quyết vấn đề theo hướng nào?", options: [{ key: "A", text: "Nhờ người khác giúp đỡ" }, { key: "B", text: "Trốn tránh vấn đề" }, { key: "C", text: "Để cxuc lấn át" }, { key: "D", text: "Bình tĩnh giải quyết" }], correctAnswer: "D" },
     ];
 
-    // SỬ DỤNG HASH ROUTING ĐỂ HOẠT ĐỘNG TỐT TRÊN GITHUB PAGES/VERCEL
     function getNormalizedPath() {
       const hash = window.location.hash;
       if (hash && hash.startsWith('#/')) {
@@ -220,7 +133,6 @@
       window.location.hash = path;
     }
 
-    // LINK API GOOGLE SHEETS MỚI CỦA BẠN
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbybKeSmJku_AKib1b2tHHTuugQbEQrkPs5nV51_tZkmLPyaABtDSyFnJ1XtQam8sySXmQ/exec';
 
     function App() {
@@ -237,7 +149,6 @@
 
       const [loadedResult, setLoadedResult] = useState(null);
       const [resultNotFound, setResultNotFound] = useState(false);
-      const [copiedLink, setCopiedLink] = useState(false);
 
       const totalQuestions = QUIZ_DATA.length;
       const answeredCount = Object.keys(userAnswers).length;
@@ -251,12 +162,9 @@
       useEffect(() => {
         const handleHashChange = () => setCurrentPath(getNormalizedPath());
         window.addEventListener('hashchange', handleHashChange);
-        return () => {
-          window.removeEventListener('hashchange', handleHashChange);
-        };
+        return () => window.removeEventListener('hashchange', handleHashChange);
       }, []);
 
-      // Logic nạp dữ liệu nếu vào link dạng /#/result/1
       useEffect(() => {
         if (currentPath.startsWith('/result/')) {
           const resultId = currentPath.replace('/result/', '');
@@ -264,7 +172,6 @@
             setIsLoadingResult(true);
             setResultNotFound(false);
             
-            // Gọi API lấy dữ liệu kết quả theo ID
             fetch(`${GOOGLE_SCRIPT_URL}?action=get&id=${resultId}`)
               .then(res => res.json())
               .then(data => {
@@ -293,9 +200,7 @@
       }, [currentPath]);
 
       let currentQuestionIndex = 0;
-      let isQuestionPage = false;
-      let isIntroPage = false;
-      let isResultPage = false;
+      let isQuestionPage = false, isIntroPage = false, isResultPage = false;
 
       if (currentPath === '/question' || currentPath === '/question/') {
         isIntroPage = true;
@@ -305,66 +210,41 @@
         if (!isNaN(num) && num >= 1 && num <= totalQuestions) {
           currentQuestionIndex = num - 1;
           isQuestionPage = true;
-        } else {
-          isIntroPage = true;
-        }
+        } else isIntroPage = true;
       } else if (currentPath.startsWith('/result/')) {
         isResultPage = true;
-      } else {
-        isIntroPage = true;
-      }
+      } else isIntroPage = true;
 
       const currentQ = QUIZ_DATA[currentQuestionIndex];
 
       const handleStartQuizClick = () => {
-        setNameInput(userName);
-        setNameError('');
-        setShowNameModal(true);
+        setNameInput(userName); setNameError(''); setShowNameModal(true);
       };
 
       const handleConfirmName = (e) => {
         e.preventDefault();
         const trimmed = nameInput.trim();
-        if (!trimmed) {
-          setNameError('Nhập tên của em vào đây nhé💖');
-          return;
-        }
+        if (!trimmed) { setNameError('Nhập tên của em vào đây nhé💖'); return; }
         setUserName(trimmed);
         localStorage.setItem('quiz_user_name', trimmed);
         setShowNameModal(false);
         navigate('/question/1');
       };
 
-      const handleSelectOption = (optionKey) => {
-        setUserAnswers((prev) => ({ ...prev, [currentQ.id]: optionKey }));
-      };
-
-      const handleNext = () => {
-        if (currentQuestionIndex < totalQuestions - 1) navigate(`/question/${currentQuestionIndex + 2}`);
-      };
-
-      const handlePrev = () => {
-        if (currentQuestionIndex > 0) navigate(`/question/${currentQuestionIndex}`);
-      };
-
-      const handleJumpToQuestion = (index) => {
-        navigate(`/question/${index + 1}`);
-      };
+      const handleSelectOption = (optionKey) => { setUserAnswers((prev) => ({ ...prev, [currentQ.id]: optionKey })); };
+      const handleNext = () => { if (currentQuestionIndex < totalQuestions - 1) navigate(`/question/${currentQuestionIndex + 2}`); };
+      const handlePrev = () => { if (currentQuestionIndex > 0) navigate(`/question/${currentQuestionIndex}`); };
+      const handleJumpToQuestion = (index) => { navigate(`/question/${index + 1}`); };
 
       const calculateScore = (answers) => {
         let score = 0;
-        QUIZ_DATA.forEach((q) => {
-          if (answers[q.id] === q.correctAnswer) score += 1;
-        });
+        QUIZ_DATA.forEach((q) => { if (answers[q.id] === q.correctAnswer) score += 1; });
         return score;
       };
 
       const handleSubmit = () => {
-        if (answeredCount < totalQuestions) {
-          setShowConfirmModal(true);
-        } else {
-          executeSubmit();
-        }
+        if (answeredCount < totalQuestions) setShowConfirmModal(true);
+        else executeSubmit();
       };
 
       const executeSubmit = async () => {
@@ -373,8 +253,9 @@
 
         const score = calculateScore(userAnswers);
         
-        // Gọi API lưu dữ liệu
-        const url = `${GOOGLE_SCRIPT_URL}?action=save&name=${encodeURIComponent(userName || 'Em bé')}&score=${score}&answers=${encodeURIComponent(JSON.stringify(userAnswers))}`;
+        // CẬP NHẬT MỚI: Lấy URL gốc của trình duyệt gửi lên server
+        const baseUrl = window.location.origin + window.location.pathname;
+        const url = `${GOOGLE_SCRIPT_URL}?action=save&name=${encodeURIComponent(userName || 'Em bé')}&score=${score}&answers=${encodeURIComponent(JSON.stringify(userAnswers))}&baseUrl=${encodeURIComponent(baseUrl)}`;
         
         try {
           const res = await fetch(url);
@@ -382,7 +263,6 @@
           setIsSubmitting(false);
           
           if (data.status === 'success') {
-             // Tự động chuyển hướng tới link kết quả vừa được cấp (VD: /#/result/1)
              navigate(`/result/${data.id}`);
           } else {
             alert("Có lỗi khi nộp bài. Em kiểm tra lại mạng nhé!");
@@ -394,50 +274,16 @@
         }
       };
 
-      const handleCopyResultLink = () => {
-        const fullUrl = window.location.href;
-        navigator.clipboard.writeText(fullUrl).then(() => {
-          setCopiedLink(true);
-          setTimeout(() => setCopiedLink(false), 2500);
-        });
-      };
-
       const getFeedback = (score) => {
-        if (score === 15) {
-          return {
-            title: "Tâm Đầu Ý Hợp 100%! 👩‍❤️‍👨",
-            message: "God damn! Trl đúng hết như này xứng đáng đc nhận 1 nụ hôn lốc xoáy kiểu Pháp 😇",
-            badgeBg: "bg-emerald-100 text-emerald-800 border-emerald-300",
-            icon: "🏆💖✨",
-          };
-        } else if (score >= 12) {
-          return {
-            title: "Siêu Thấu Hiểu! 🥰",
-            message: "Cũng rất tuyệt vời r đấy! Chỉ thiếu 1 chút nx hoii 🥰",
-            badgeBg: "bg-pink-100 text-pink-800 border-pink-300",
-            icon: "🌸💕⭐",
-          };
-        } else if (score >= 8) {
-          return {
-            title: "Khá Hiểu Nhau Đấy! 🌟",
-            message: "Cũng rất tốt rồi nma yêu anh mà đúng có bằng này là hơi đáng lo đấy",
-            badgeBg: "bg-amber-100 text-amber-800 border-amber-300",
-            icon: "☕🍰🌷",
-          };
-        } else {
-          return {
-            title: "Cần Bồi Dưỡng Tình Cảm Thêm Nè! 🥺",
-            message: "Haizzzz. Chán chả buồn nói 😒",
-            badgeBg: "bg-rose-100 text-rose-800 border-rose-300",
-            icon: "🥺💌🥤",
-          };
-        }
+        if (score === 15) return { title: "Tâm Đầu Ý Hợp 100%! 👩‍❤️‍👨", message: "God damn! Trl đúng hết như này xứng đáng đc nhận 1 nụ hôn lốc xoáy kiểu Pháp 😇", badgeBg: "bg-emerald-100 text-emerald-800 border-emerald-300", icon: "🏆💖✨" };
+        else if (score >= 12) return { title: "Siêu Thấu Hiểu! 🥰", message: "Cũng rất tuyệt vời r đấy! Chỉ thiếu 1 chút nx hoii 🥰", badgeBg: "bg-pink-100 text-pink-800 border-pink-300", icon: "🌸💕⭐" };
+        else if (score >= 8) return { title: "Khá Hiểu Nhau Đấy! 🌟", message: "Cũng rất tốt rồi nma yêu anh mà đúng có bằng này là hơi đáng lo đấy", badgeBg: "bg-amber-100 text-amber-800 border-amber-300", icon: "☕🍰🌷" };
+        else return { title: "Cần Bồi Dưỡng Tình Cảm Thêm Nè! 🥺", message: "Haizzzz. Chán chả buồn nói 😒", badgeBg: "bg-rose-100 text-rose-800 border-rose-300", icon: "🥺💌🥤" };
       };
 
       return (
         <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-3xl mx-auto">
           
-          {/* MÀN HÌNH LOADING */}
           {isSubmitting && (
             <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
               <div className="glass-card p-8 rounded-3xl text-center flex flex-col items-center max-w-sm w-full border-2 border-pink-200">
@@ -467,7 +313,6 @@
             </header>
           )}
 
-          {/* 1. TRANG GIỚI THIỆU */}
           {isIntroPage && (
             <main className="flex-1 flex flex-col items-center justify-center my-auto py-8">
               <div className="dark-card rounded-3xl p-8 sm:p-12 text-center text-white max-w-lg w-full relative overflow-hidden transition-all duration-300 transform hover:scale-[1.01]">
@@ -494,7 +339,6 @@
             </main>
           )}
 
-          {/* 2. TRANG CÂU HỎI */}
           {isQuestionPage && (
             <main className="w-full">
               <div className="glass-card rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all duration-300">
@@ -617,7 +461,6 @@
             </main>
           )}
 
-          {/* 3. TRANG KẾT QUẢ SAU KHI NỘP & GET DATA */}
           {isResultPage && (
             <main className="w-full">
               {isLoadingResult ? (
@@ -665,17 +508,11 @@
                           Nộp lúc: {loadedResult.submittedAt} (ID: #{loadedResult.id})
                         </div>
 
-                        {/* Thanh Copy Link dành cho người thi gửi lại cho bạn */}
+                        {/* Đã xóa hoàn toàn khu vực copy link theo yêu cầu */}
                         <div className="mt-6 pt-5 border-t border-pink-100 max-w-md mx-auto">
-                          <label className="block text-xs font-bold text-gray-600 mb-1.5 text-left">
-                            🔗 Copy link này gửi lại cho anh ấy xem nhé:
-                          </label>
-                          <div className="flex gap-2">
-                            <input type="text" readOnly value={window.location.href} className="flex-1 bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-gray-600 outline-none" />
-                            <button onClick={handleCopyResultLink} className="px-4 py-2 bg-sweetpink-500 hover:bg-sweetpink-600 text-white rounded-xl text-xs font-bold shadow-sm transition-colors active:scale-95">
-                              {copiedLink ? "Đã chép! ✅" : "Sao chép 📋"}
-                            </button>
-                          </div>
+                           <div className="bg-emerald-50 text-emerald-700 px-4 py-3.5 rounded-2xl border-2 border-emerald-200 font-bold text-sm flex items-center justify-center gap-2 shadow-sm">
+                             <span className="text-lg">💌</span> Kết quả đã được tự động gửi cho anh!
+                           </div>
                         </div>
                       </div>
 
@@ -749,7 +586,6 @@
             </main>
           )}
 
-          {/* MODAL NHẬP TÊN */}
           {showNameModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
               <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center border-2 border-pink-200 shadow-2xl">
@@ -776,7 +612,6 @@
             </div>
           )}
 
-          {/* MODAL CẢNH BÁO NỘP */}
           {showConfirmModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
               <div className="glass-card rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center border-2 border-pink-200 shadow-2xl">
