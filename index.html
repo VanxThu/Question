@@ -190,7 +190,7 @@
     const { useState, useEffect } = React;
 
     const QUIZ_DATA = [
-      { id: 1, question: "Món ăn yêu thích của anh?", options: [{ key: "A", text: "Gà rán" }, { key: "B", text: "Sườn xào chua ngọt" }, { key: "C", text: "Thịt kho" }, { key: "D", text: "Cá sốt cà" }], correctAnswer: "C" },
+      { id: 1, question: "Món ăn yêu thích của anh?", options: [{ key: "A", text: "Thịt băm" }, { key: "B", text: "Cá kho" }, { key: "C", text: "Thịt kho" }, { key: "D", text: "Thịt gà luộc" }], correctAnswer: "C" },
       { id: 2, question: "Màu sắc yêu thích của anh?", options: [{ key: "A", text: "Màu xanh nước" }, { key: "B", text: "Màu đỏ" }, { key: "C", text: "Màu đen" }, { key: "D", text: "Màu vàng" }], correctAnswer: "A" },
       { id: 3, question: "Anh thích ăn món đồ ăn nhanh nào?", options: [{ key: "A", text: "Khoai tây chiên" }, { key: "B", text: "Hamburger" }, { key: "C", text: "Gà rán" }, { key: "D", text: "Bánh chuối" }], correctAnswer: "D" },
       { id: 4, question: "Loại rau anh ko thik?", options: [{ key: "A", text: "Rau muống" }, { key: "B", text: "Mướp" }, { key: "C", text: "Súp lơ" }, { key: "D", text: "Cải ngọt" }], correctAnswer: "B" },
@@ -204,7 +204,7 @@
       { id: 12, question: "Bình thường anh có thích xem phim không?", options: [{ key: "A", text: "Có" }, { key: "B", text: "Ko" }, { key: "C", text: "Thỉnh thoảng" }, { key: "D", text: "Chỉ xem phim chiếu rạp" }], correctAnswer: "B" },
       { id: 13, question: "Anh thik mùa nào trong năm nhất?", options: [{ key: "A", text: "Mùa xuân" }, { key: "B", text: "Mùa hạ" }, { key: "C", text: "Mùa thu" }, { key: "D", text: "Mùa đông" }], correctAnswer: "C" },
       { id: 14, question: "Anh có thik chs thể thao ko?", options: [{ key: "A", text: "Có" }, { key: "B", text: "Không" }, { key: "C", text: "Rất đam mê" }, { key: "D", text: "Tùy vào bộ môn" }], correctAnswer: "B" },
-      { id: 15, question: "Anh ưu tiên giải quyết vấn đề theo hướng nào?", options: [{ key: "A", text: "Nhờ người khác giúp đỡ" }, { key: "B", text: "Trốn tránh vấn đề" }, { key: "C", text: "Để cxuc lấn áp" }, { key: "D", text: "Bình tĩnh giải quyết" }], correctAnswer: "D" },
+      { id: 15, question: "Anh ưu tiên giải quyết vấn đề theo hướng nào?", options: [{ key: "A", text: "Nhờ người khác giúp đỡ" }, { key: "B", text: "Trốn tránh vấn đề" }, { key: "C", text: "Để cxuc lấn át" }, { key: "D", text: "Bình tĩnh giải quyết" }], correctAnswer: "D" },
     ];
 
     function getNormalizedPath() {
@@ -484,7 +484,7 @@
                 <div className="absolute -top-16 -right-16 w-44 h-44 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-rose-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-pink-300 text-xs sm:text-sm font-semibold uppercase tracking-wider mb-4">
-                  <span>✨</span><span>✨</span>
+                 
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-pink-400 font-cute tracking-wide drop-shadow-md mb-3">
                   Em Hiểu Anh Đến Đâu? 💖
@@ -755,23 +755,23 @@
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
               <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center border-2 border-pink-200 shadow-2xl">
                 <div className="text-4xl mb-2 animate-bounce-slow">🌸📝</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-1">Chào em bé đáng yêu!</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-1">Chào eiu cụa anh</h3>
                 <p className="text-xs sm:text-sm text-gray-600 mb-5">
-                  Trước khi bắt đầu, hãy cho anh biết tên hoặc biệt danh của em nhé:
+                  Nhập tên cụa em vào đây nhé:
                 </p>
                 <form onSubmit={handleConfirmName}>
                   <div className="mb-4 text-left">
                     <input
                       type="text" autoFocus value={nameInput}
                       onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
-                      placeholder="Ví dụ: Bé Mèo, Công chúa nhỏ..."
+                      
                       className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-pink-200 focus:border-sweetpink-500 focus:ring-4 focus:ring-pink-100 outline-none text-sm font-semibold text-gray-800"
                     />
                     {nameError && <p className="text-rose-500 text-xs font-semibold mt-1.5 pl-1">{nameError}</p>}
                   </div>
                   <div className="flex gap-2.5">
                     <button type="button" onClick={() => setShowNameModal(false)} className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-600">Để sau</button>
-                    <button type="submit" className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-sweetpink-500 to-rose-500 text-white shadow-md active:scale-95">Bắt đầu thi 🎯</button>
+                    <button type="submit" className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-sweetpink-500 to-rose-500 text-white shadow-md active:scale-95">Bắt đầu🎯</button>
                   </div>
                 </form>
               </div>
